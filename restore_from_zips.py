@@ -354,11 +354,12 @@ def autodetect_zips():
         if not os.path.isdir(folder):
             continue
         try:
-            names = [n for n in os.listdir(folder) if n.lower().endswith(".zip")]
+            # Only real Takeout parts — an unrelated report.zip on the Desktop
+            # must never be picked up by accident.
+            names = [n for n in os.listdir(folder)
+                     if n.lower().endswith(".zip") and "takeout" in n.lower()]
         except OSError:
             continue
-        takeout = [n for n in names if "takeout" in n.lower()]
-        names = takeout or names
         if not names:
             continue
         total = sum(os.path.getsize(os.path.join(folder, n)) for n in names)
@@ -408,8 +409,9 @@ def main(argv=None) -> int:
     else:
         detected = autodetect_zips()
         if not detected:
-            raise SystemExit("没找到 Takeout 分卷（takeout-*.zip）。放到 ~/Downloads 后重试，"
-                             "或用 --zips 指定目录。")
+            raise SystemExit(
+                "没找到 Takeout 分卷（takeout-*.zip）。把它们放进 ~/Downloads 后重试；"
+                "如果文件名被改过，用 --zips 指向所在目录。")
         zips_dir = detected[0]
     if not os.path.isdir(zips_dir):
         raise SystemExit(f"分卷目录不存在: {zips_dir}")
